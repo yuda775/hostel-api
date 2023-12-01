@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model facilities {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  image String?
+}
+
+enum roomCategoty {
+  DORM
+  PRIVATE
+}
+
+model rooms {
+  id         Int          @id @default(autoincrement())
+  roomNumber Int
+  category   roomCategoty
+  images     roomImages[]
+}
+
+model roomImages {
+  id     Int    @id @default(autoincrement())
+  roomId Int
+  image  String
+  room   rooms  @relation(fields: [roomId], references: [id])
+}
