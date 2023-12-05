@@ -1,8 +1,8 @@
 const uuid = require("uuid");
 const path = require("path");
 const fs = require("fs");
-const roomModel = require("../models/roomModels");
-const roomImageModel = require("../models/roomImageModels");
+const roomModel = require("../models/roomModel");
+const roomImageModel = require("../models/roomImageModel");
 
 const imageDirectory = "./public/images/rooms/";
 

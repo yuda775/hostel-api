@@ -1,4 +1,4 @@
-const facilitiesModel = require("../models/facilityModels");
+const facilitiesModel = require("../models/facilityModel");
 const fileHandler = require("../utils/fileHandler");
 
 module.exports = {

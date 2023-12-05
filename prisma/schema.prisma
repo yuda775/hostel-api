@@ -7,27 +7,42 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model facilities {
-  id    Int     @id @default(autoincrement())
-  name  String  @unique
-  image String?
+model RoomFacilitiesRelation {
+  roomId     Int
+  facilityId Int
+  room       Rooms          @relation(fields: [roomId], references: [id])
+  facility   RoomFacilities @relation(fields: [facilityId], references: [id])
+
+  @@id([roomId, facilityId])
 }
 
-enum roomCategoty {
+model Rooms {
+  id                   Int                      @id @default(autoincrement())
+  roomNumber           Int
+  capacity             Int
+  price                Float
+  type                 EnumType
+  images               RoomImages[]
+  facilities           RoomFacilities[]         @relation("RoomFacilitiesRelation")
+  roomFacilityRelation RoomFacilitiesRelation[]
+}
+
+model RoomImages {
+  id     Int    @id @default(autoincrement())
+  images String
+  room   Rooms  @relation(fields: [roomId], references: [id])
+  roomId Int
+}
+
+model RoomFacilities {
+  id                     Int                      @id @default(autoincrement())
+  name                   String
+  image                  String?
+  rooms                  Rooms[]                  @relation("RoomFacilitiesRelation")
+  roomFacilitiesRelation RoomFacilitiesRelation[]
+}
+
+enum EnumType {
   DORM
   PRIVATE
-}
-
-model rooms {
-  id         Int          @id @default(autoincrement())
-  roomNumber Int
-  category   roomCategoty
-  images     roomImages[]
-}
-
-model roomImages {
-  id     Int    @id @default(autoincrement())
-  roomId Int
-  image  String
-  room   rooms  @relation(fields: [roomId], references: [id])
 }
