@@ -23,7 +23,6 @@ model Rooms {
   price                Float
   type                 EnumType
   images               RoomImages[]
-  facilities           RoomFacilities[]         @relation("RoomFacilitiesRelation")
   roomFacilityRelation RoomFacilitiesRelation[]
 }
 
@@ -38,7 +37,6 @@ model RoomFacilities {
   id                     Int                      @id @default(autoincrement())
   name                   String
   image                  String?
-  rooms                  Rooms[]                  @relation("RoomFacilitiesRelation")
   roomFacilitiesRelation RoomFacilitiesRelation[]
 }
 

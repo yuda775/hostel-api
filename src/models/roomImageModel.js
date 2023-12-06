@@ -6,7 +6,7 @@ module.exports = {
     return await prisma.roomImages.create({
       data: {
         roomId: parseInt(roomId),
-        image: JSON.stringify(image),
+        images: JSON.stringify(image),
       },
     });
   },

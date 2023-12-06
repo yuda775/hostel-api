@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const roomModel = require("../models/roomModel");
 const roomImageModel = require("../models/roomImageModel");
+const roomFacilitiesRelationModel = require("../models/roomFacilitiesRelationModel");
 
 const imageDirectory = "./public/images/rooms/";
 
@@ -37,15 +38,24 @@ module.exports = {
   },
 
   createRoom: async (req, res) => {
-    try {
-      const { body: roomData, files } = req;
-      const images = files?.images;
+    const { roomNumber, capacity, price, type, facilities } = req.body;
+    const images = req.files?.images;
 
+    const facilitiesArray = Array.isArray(facilities)
+      ? facilities.map(Number)
+      : [facilities].map(Number);
+
+    try {
       if (!images) {
-        await roomModel.createRoom(roomData);
+        const room = await roomModel.createRoom(
+          parseInt(roomNumber),
+          parseInt(capacity),
+          parseFloat(price),
+          type
+        );
         res.json({
           status: true,
-          roomData,
+          room,
           message: "Create room without images successfully",
         });
         return;
@@ -53,8 +63,19 @@ module.exports = {
 
       const uploadedImageNames = await handleImageUpload(images);
 
-      const room = await roomModel.createRoom(roomData);
+      const room = await roomModel.createRoom(
+        parseInt(roomNumber),
+        parseInt(capacity),
+        parseFloat(price),
+        type
+      );
       const roomId = room.id;
+
+      const createdFacilities = await Promise.all(
+        facilitiesArray.map((facilityId) =>
+          roomFacilitiesRelationModel.createRelation(roomId, facilityId)
+        )
+      );
 
       const uploadedImages = await Promise.all(
         uploadedImageNames.map((fileName) =>
@@ -66,6 +87,7 @@ module.exports = {
         status: true,
         room,
         images: uploadedImages,
+        facilities: createdFacilities,
         message: "Create room with images successfully",
       });
     } catch (error) {

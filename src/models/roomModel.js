@@ -6,6 +6,11 @@ module.exports = {
     return await prisma.rooms.findMany({
       include: {
         images: true,
+        roomFacilityRelation: {
+          select: {
+            facility: true,
+          },
+        },
       },
     });
   },
@@ -17,15 +22,22 @@ module.exports = {
       },
       include: {
         images: true,
+        roomFacilityRelation: {
+          include: {
+            facility: true,
+          },
+        },
       },
     });
   },
 
-  createRoom: async (roomData) => {
+  createRoom: async (roomNumber, capacity, price, type) => {
     return await prisma.rooms.create({
       data: {
-        roomNumber: parseInt(roomData.roomNumber),
-        category: roomData.category,
+        roomNumber: roomNumber,
+        capacity: capacity,
+        price: price,
+        type: type,
       },
     });
   },
