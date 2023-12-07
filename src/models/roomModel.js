@@ -23,7 +23,7 @@ module.exports = {
       include: {
         images: true,
         roomFacilityRelation: {
-          include: {
+          select: {
             facility: true,
           },
         },
@@ -42,14 +42,16 @@ module.exports = {
     });
   },
 
-  updateRoom: async (roomId, updatedRoomData) => {
+  updateRoom: async (roomId, data) => {
     return await prisma.rooms.update({
       where: {
         id: parseInt(roomId),
       },
       data: {
-        roomNumber: parseInt(updatedRoomData.roomNumber),
-        category: updatedRoomData.category,
+        roomNumber: parseInt(data.roomNumber),
+        type: data.type,
+        capacity: data.capacity,
+        price: data.price,
       },
     });
   },

@@ -15,4 +15,17 @@ module.exports = {
       throw error;
     }
   },
+
+  deleteRelation: async (roomId) => {
+    try {
+      return await prisma.roomFacilitiesRelation.deleteMany({
+        where: {
+          roomId: parseInt(roomId),
+        },
+      });
+    } catch (error) {
+      console.error("Error delete room facility relation:", error);
+      throw error;
+    }
+  },
 };
