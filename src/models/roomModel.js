@@ -34,9 +34,9 @@ module.exports = {
   createRoom: async (roomNumber, capacity, price, type) => {
     return await prisma.rooms.create({
       data: {
-        roomNumber: roomNumber,
-        capacity: capacity,
-        price: price,
+        roomNumber: parseInt(roomNumber),
+        capacity: parseInt(capacity),
+        price: parseFloat(price),
         type: type,
       },
     });
@@ -49,9 +49,9 @@ module.exports = {
       },
       data: {
         roomNumber: parseInt(data.roomNumber),
+        capacity: parseInt(data.capacity),
+        price: parseFloat(data.price),
         type: data.type,
-        capacity: data.capacity,
-        price: data.price,
       },
     });
   },

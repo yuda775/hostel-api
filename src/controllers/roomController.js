@@ -1,10 +1,8 @@
-const uuid = require("uuid");
-const path = require("path");
-const fs = require("fs");
 const roomModel = require("../models/roomModel");
 const roomImageModel = require("../models/roomImageModel");
 const roomFacilitiesRelationModel = require("../models/roomFacilitiesRelationModel");
 
+const fileHandler = require("../utils/fileHandler");
 const imageDirectory = "./public/images/rooms/";
 
 const getRooms = async (req, res) => {
@@ -37,16 +35,13 @@ const getRoomById = async (req, res) => {
 };
 
 const updateRoom = async (req, res) => {
-  let uploadedImages;
-  let createdFacilities;
-
   const roomId = req.params.id;
   const { roomNumber, capacity, price, type, facilities } = req.body;
   const images = req.files?.images;
 
   const facilitiesArray = Array.isArray(facilities)
-    ? facilities.map((facilityId) => parseInt(facilityId))
-    : [parseInt(facilities)];
+    ? facilities.filter(Number.isInteger).map(Number)
+    : [];
 
   try {
     const existingRoom = await roomModel.getRoomById(roomId);
@@ -55,47 +50,65 @@ const updateRoom = async (req, res) => {
       return res.status(404).json({ message: "Kamar tidak ditemukan" });
     }
 
-    const updatedRoom = await roomModel.updateRoom(roomId, {
+    const updatedRoomData = {
       roomNumber: parseInt(roomNumber) || existingRoom.roomNumber,
       capacity: parseInt(capacity) || existingRoom.capacity,
       price: parseFloat(price) || existingRoom.price,
       type: type || existingRoom.type,
-    });
+    };
 
-    // Hapus dan tambahkan fasilitas jika ada
+    const updatedRoom = await roomModel.updateRoom(roomId, updatedRoomData);
+
+    const filePath = imageDirectory + roomId;
+
     if (facilitiesArray.length > 0) {
-      // Filter nilai yang valid (bukan NaN)
-      const validFacilitiesArray = facilitiesArray.filter(
-        (facilityId) => !isNaN(facilityId)
+      await roomFacilitiesRelationModel.deleteRelation(roomId);
+      const createdFacilities = await Promise.all(
+        facilitiesArray.map((facilityId) =>
+          roomFacilitiesRelationModel.createRelation(roomId, facilityId)
+        )
       );
 
-      if (validFacilitiesArray.length > 0) {
-        await roomFacilitiesRelationModel.deleteRelation(roomId);
-        createdFacilities = await Promise.all(
-          validFacilitiesArray.map((facilityId) =>
-            roomFacilitiesRelationModel.createRelation(roomId, facilityId)
-          )
-        );
-      }
+      return res.status(200).json({
+        status: true,
+        room: updatedRoom,
+        images: [],
+        facilities: createdFacilities,
+        message: "Kamar berhasil diperbarui",
+      });
     }
 
-    // Lakukan pembaruan pada gambar jika ada
     if (images) {
-      await handleImagesCleanup(existingRoom.images);
-      const uploadedImageNames = await handleImageUpload(images);
+      await fileHandler.handleImagesCleanup(filePath, existingRoom.images);
+      const uploadedImageNames = await fileHandler.handleImageUpload(
+        filePath,
+        images
+      );
+
       await roomImageModel.deleteRoomImages(roomId);
-      uploadedImages = await Promise.all(
+      const uploadedImages = await Promise.all(
         uploadedImageNames.map((fileName) =>
           roomImageModel.createRoomImage(roomId, fileName)
         )
       );
+
+      return res.status(200).json({
+        status: true,
+        room: updatedRoom,
+        images: uploadedImages,
+        facilities: [],
+        message: "Kamar berhasil diperbarui",
+      });
+    } else {
+      await roomImageModel.deleteRoomImages(roomId);
+      await fileHandler.handleImagesCleanup(filePath, existingRoom.images);
     }
 
     res.status(200).json({
       status: true,
       room: updatedRoom,
-      images: uploadedImages || [],
-      facilities: createdFacilities || [],
+      images: [],
+      facilities: [],
       message: "Kamar berhasil diperbarui",
     });
   } catch (error) {
@@ -113,9 +126,16 @@ const deleteRoom = async (req, res) => {
       return res.status(404).json({ message: "Room not found" });
     }
 
-    handleImagesCleanup(room.images);
+    const filePath = `${imageDirectory}${roomId}`;
+
+    const isImageDirectoryExist = await fileHandler.isDirectoryExists(filePath);
+
+    if (isImageDirectoryExist) {
+      await fileHandler.handleDeleteDirectory(filePath);
+    }
 
     await roomImageModel.deleteRoomImages(roomId);
+    await roomFacilitiesRelationModel.deleteRelation(roomId);
     await roomModel.deleteRoom(roomId);
 
     return res.status(200).json({
@@ -130,117 +150,59 @@ const deleteRoom = async (req, res) => {
 
 const createRoom = async (req, res) => {
   const { roomNumber, capacity, price, type, facilities } = req.body;
-  const images = req.files?.images;
-
-  const facilitiesArray = Array.isArray(facilities)
-    ? facilities.map(Number)
-    : [facilities].map(Number);
+  const uploadedImages = req.files?.images;
 
   try {
-    if (!images) {
-      const room = await roomModel.createRoom(
-        parseInt(roomNumber),
-        parseInt(capacity),
-        parseFloat(price),
-        type
-      );
-      res.json({
+    const facilitiesArray = Array.isArray(facilities)
+      ? facilities.map(Number)
+      : [Number(facilities)];
+
+    const room = await roomModel.createRoom(roomNumber, capacity, price, type);
+
+    if (!uploadedImages) {
+      return res.json({
         status: true,
         room,
         message: "Create room without images successfully",
       });
-      return;
     }
 
-    const uploadedImageNames = await handleImageUpload(images);
-
-    const room = await roomModel.createRoom(
-      parseInt(roomNumber),
-      parseInt(capacity),
-      parseFloat(price),
-      type
-    );
     const roomId = room.id;
+    const imagePath = `${imageDirectory}${roomId}/`;
 
-    const createdFacilities = await Promise.all(
-      facilitiesArray.map((facilityId) =>
-        roomFacilitiesRelationModel.createRelation(roomId, facilityId)
-      )
+    const uploadedFileNames = await fileHandler.handleImageUpload(
+      imagePath,
+      uploadedImages
     );
 
-    const uploadedImages = await Promise.all(
-      uploadedImageNames.map((fileName) =>
-        roomImageModel.createRoomImage(roomId, fileName)
-      )
-    );
+    const [createdFacilities, uploadedImagesResult] = await Promise.all([
+      Promise.all(
+        facilitiesArray.map((facilityId) =>
+          roomFacilitiesRelationModel.createRelation(roomId, facilityId)
+        )
+      ),
+      Promise.all(
+        (Array.isArray(uploadedFileNames)
+          ? uploadedFileNames
+          : [uploadedFileNames]
+        ).map((filename) => roomImageModel.createRoomImage(roomId, filename))
+      ),
+    ]);
 
-    res.status(200).json({
+    const response = {
       status: true,
       room,
-      images: uploadedImages,
+      images: uploadedImagesResult,
       facilities: createdFacilities,
       message: "Create room with images successfully",
-    });
+    };
+
+    res.status(200).json(response);
   } catch (error) {
-    console.log(error.message);
+    console.error(error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-async function handleImageUpload(images) {
-  const allowedFileTypes = [".png", ".jpg", ".jpeg"];
-  const imageArray = Array.isArray(images) ? images : [images];
-
-  return Promise.all(
-    imageArray.map(async (image) => {
-      const fileFormat = path.extname(image.name).toLowerCase();
-      const uniqueId = uuid.v4(); // Generate a unique identifier
-      const fileName = `${uniqueId}${fileFormat}`;
-
-      if (!allowedFileTypes.includes(fileFormat)) {
-        return Promise.reject("Invalid image format");
-      }
-
-      if (!fs.existsSync(imageDirectory)) {
-        fs.mkdirSync(imageDirectory, { recursive: true });
-      }
-
-      return new Promise((resolve, reject) => {
-        image.mv(path.join(imageDirectory, fileName), (err) => {
-          if (err) {
-            console.error(err);
-            reject(new Error("Failed to upload image"));
-          } else {
-            resolve(fileName);
-          }
-        });
-      });
-    })
-  );
-}
-
-async function handleImagesCleanup(images) {
-  const imageDirectory = path.join(__dirname, "../public/images/rooms");
-
-  try {
-    // Hapus gambar-gambar lama jika ada
-    if (images && Array.isArray(images) && images.length > 0) {
-      await Promise.all(
-        images.map(async (image) => {
-          const imageName = typeof image === "object" ? image.images : image;
-          const imagePath = path.join(imageDirectory, imageName);
-
-          if (fs.existsSync(imagePath)) {
-            fs.unlinkSync(imagePath);
-          }
-        })
-      );
-    }
-  } catch (error) {
-    console.error("Error cleaning up images:", error);
-    throw error;
-  }
-}
 
 module.exports = {
   getRooms,

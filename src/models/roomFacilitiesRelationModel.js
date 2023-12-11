@@ -16,6 +16,26 @@ module.exports = {
     }
   },
 
+  updateRelation: async (roomId, facilityId) => {
+    try {
+      return await prisma.roomFacilitiesRelation.update({
+        where: {
+          roomId_facilityId: {
+            roomId: parseInt(roomId),
+            facilityId: parseInt(facilityId),
+          },
+        },
+        data: {
+          roomId: parseInt(roomId),
+          facilityId: parseInt(facilityId),
+        },
+      });
+    } catch (error) {
+      console.error("Error update room facility relation:", error);
+      throw error;
+    }
+  },
+
   deleteRelation: async (roomId) => {
     try {
       return await prisma.roomFacilitiesRelation.deleteMany({
