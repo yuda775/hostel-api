@@ -7,7 +7,7 @@ module.exports = {
       include: {
         images: true,
         roomFacilityRelation: {
-          select: {
+          include: {
             facility: true,
           },
         },

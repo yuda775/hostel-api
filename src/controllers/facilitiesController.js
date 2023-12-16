@@ -1,6 +1,8 @@
 const facilitiesModel = require("../models/facilityModel");
 const fileHandler = require("../utils/fileHandler");
 
+const uploadDirectory = "./public/images/facilities/";
+
 module.exports = {
   getFacilities: async (req, res) => {
     try {
@@ -38,14 +40,8 @@ module.exports = {
     const imageFile = req.files?.image;
 
     try {
-      const uploadDirectory = "./public/images/facilities/";
-
-      if (!fileHandler.directoryExists(uploadDirectory)) {
-        fileHandler.createDirectory(uploadDirectory);
-      }
-
       if (name && imageFile) {
-        await imageFile.mv(uploadDirectory + imageFile.name);
+        await fileHandler.handleImageUpload(uploadDirectory, imageFile.name);
         const facility = await facilitiesModel.createFacilityWithImage(
           name,
           imageFile.name
@@ -87,9 +83,7 @@ module.exports = {
       await facilitiesModel.deleteFacility(id);
 
       if (fileName) {
-        const filePath = `./public/images/facilities/${fileName}`;
-
-        await fileHandler.deleteFile(filePath);
+        await fileHandler.handleDeleteDirectory(uploadDirectory);
       }
 
       res.json({ message: "Fasilitas berhasil dihapus" });
