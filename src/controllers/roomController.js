@@ -1,6 +1,7 @@
 const roomModel = require("../models/roomModel");
 const roomImageModel = require("../models/roomImageModel");
 const roomFacilitiesRelationModel = require("../models/roomFacilitiesRelationModel");
+const reservationModel = require("../models/reservationModel");
 
 const fileHandler = require("../utils/fileHandler");
 const imageDirectory = "./public/images/rooms/";
@@ -65,7 +66,7 @@ module.exports = {
 
       const filePath = imageDirectory + roomId;
 
-      if (facilitiesArray.length > 0 && !isNaN(facilitiesArray)) {
+      if (facilitiesArray.length > 0 && !facilitiesArray.some(isNaN)) {
         await roomFacilitiesRelationModel.deleteRelation(roomId);
         createdFacilities = await Promise.all(
           facilitiesArray.map((facilityId) =>
@@ -196,6 +197,31 @@ module.exports = {
     } catch (error) {
       console.error(error.message);
       res.status(500).json({ message: "Internal Server Error" });
+    }
+  },
+
+  checkRoomAvailability: async (req, res) => {
+    try {
+      const { checkin, checkout, type, guestTotal } = req.body;
+
+      const availableRooms = await roomModel.checkRoomAvailability(
+        checkin,
+        checkout,
+        type,
+        guestTotal
+      );
+
+      return res.json({
+        status: true,
+        availableRooms,
+        message: "Room availability checked successfully",
+      });
+    } catch (err) {
+      console.error(err.message);
+      return res.status(500).json({
+        status: false,
+        message: `Error checking room availability: ${err.message}`,
+      });
     }
   },
 };
