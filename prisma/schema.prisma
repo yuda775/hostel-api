@@ -24,6 +24,7 @@ model Rooms {
   type                 EnumType
   images               RoomImages[]
   roomFacilityRelation RoomFacilitiesRelation[]
+  reservation          Reservation[]
 }
 
 model RoomImages {
@@ -43,4 +44,20 @@ model RoomFacilities {
 enum EnumType {
   DORM
   PRIVATE
+}
+
+model Reservation {
+  id         String            @id @default(cuid())
+  checkin    DateTime          @default(now())
+  checkout   DateTime
+  guestTotal Int
+  status     ReservationStatus
+  amount     Float
+  room       Rooms             @relation(fields: [roomId], references: [id])
+  roomId     Int
+}
+
+enum ReservationStatus {
+  pending
+  complete
 }
