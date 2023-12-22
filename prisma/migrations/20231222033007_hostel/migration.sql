@@ -7,7 +7,7 @@ CREATE TABLE `RoomFacilitiesRelation` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Room` (
+CREATE TABLE `Rooms` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `roomNumber` INTEGER NOT NULL,
     `capacity` INTEGER NOT NULL,
@@ -36,25 +36,26 @@ CREATE TABLE `RoomFacilities` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `_RoomFacilitiesRelation` (
-    `A` INTEGER NOT NULL,
-    `B` INTEGER NOT NULL,
+CREATE TABLE `Reservation` (
+    `id` VARCHAR(191) NOT NULL,
+    `checkin` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `checkout` DATETIME(3) NOT NULL,
+    `guestTotal` INTEGER NOT NULL,
+    `status` ENUM('pending', 'complete') NOT NULL,
+    `amount` DOUBLE NOT NULL,
+    `roomId` INTEGER NOT NULL,
 
-    UNIQUE INDEX `_RoomFacilitiesRelation_AB_unique`(`A`, `B`),
-    INDEX `_RoomFacilitiesRelation_B_index`(`B`)
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
-ALTER TABLE `RoomFacilitiesRelation` ADD CONSTRAINT `RoomFacilitiesRelation_roomId_fkey` FOREIGN KEY (`roomId`) REFERENCES `Room`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `RoomFacilitiesRelation` ADD CONSTRAINT `RoomFacilitiesRelation_roomId_fkey` FOREIGN KEY (`roomId`) REFERENCES `Rooms`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `RoomFacilitiesRelation` ADD CONSTRAINT `RoomFacilitiesRelation_facilityId_fkey` FOREIGN KEY (`facilityId`) REFERENCES `RoomFacilities`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `RoomImages` ADD CONSTRAINT `RoomImages_roomId_fkey` FOREIGN KEY (`roomId`) REFERENCES `Room`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `RoomImages` ADD CONSTRAINT `RoomImages_roomId_fkey` FOREIGN KEY (`roomId`) REFERENCES `Rooms`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `_RoomFacilitiesRelation` ADD CONSTRAINT `_RoomFacilitiesRelation_A_fkey` FOREIGN KEY (`A`) REFERENCES `Room`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `_RoomFacilitiesRelation` ADD CONSTRAINT `_RoomFacilitiesRelation_B_fkey` FOREIGN KEY (`B`) REFERENCES `RoomFacilities`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Reservation` ADD CONSTRAINT `Reservation_roomId_fkey` FOREIGN KEY (`roomId`) REFERENCES `Rooms`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
