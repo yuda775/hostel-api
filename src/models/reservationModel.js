@@ -15,6 +15,9 @@ module.exports = {
   getReservationById: async (reservationId) => {
     return await prisma.reservation.findUnique({
       where: { id: reservationId },
+      include: {
+        room: true,
+      },
     });
   },
 
@@ -31,20 +34,15 @@ module.exports = {
     });
   },
 
-  updateReservation: async (
-    reservationId,
-    roomId,
-    userId,
-    checkin,
-    checkout
-  ) => {
+  updateReservation: async (reservationId, updateData) => {
     return await prisma.reservation.update({
-      where: { id: parseInt(reservationId) },
+      where: { id: reservationId },
       data: {
-        roomId: parseInt(roomId),
-        userId: parseInt(userId),
-        checkin: new Date(checkin),
-        checkout: new Date(checkout),
+        checkin: updateData.checkin,
+        checkout: updateData.checkout,
+        status: updateData.status,
+        amount: updateData.amount,
+        guestTotal: updateData.guestTotal,
       },
     });
   },

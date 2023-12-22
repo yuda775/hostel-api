@@ -95,7 +95,13 @@ module.exports = {
       const durationDays = Math.ceil(
         durationMilliseconds / (1000 * 60 * 60 * 24)
       );
-      const amount = room.price * durationDays * guestTotal;
+
+      let amount;
+      if (room.type == "DORM") {
+        amount = room.price * durationDays * guestTotal;
+      } else {
+        amount = room.price * durationDays;
+      }
 
       const reservation = await reservationModel.createReservation(roomId, {
         checkin: userCheckin,

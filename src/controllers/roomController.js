@@ -213,7 +213,7 @@ module.exports = {
 
       return res.json({
         status: true,
-        availableRooms,
+        availableRooms,        
         message: "Room availability checked successfully",
       });
     } catch (err) {
