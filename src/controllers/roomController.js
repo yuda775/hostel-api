@@ -115,6 +115,8 @@ module.exports = {
         return res.status(404).json({ message: "Room not found" });
       }
 
+      console.log(room);
+
       const filePath = `${imageDirectory}${roomId}`;
 
       const isImageDirectoryExist = await fileHandler.isDirectoryExists(
@@ -123,10 +125,13 @@ module.exports = {
 
       if (isImageDirectoryExist) {
         await fileHandler.handleDeleteDirectory(filePath);
+        await roomImageModel.deleteRoomImages(roomId);
       }
 
-      await roomImageModel.deleteRoomImages(roomId);
-      await roomFacilitiesRelationModel.deleteRelation(roomId);
+      if (room.roomFacilityRelation.length > 0) {
+        await roomFacilitiesRelationModel.deleteRelation(roomId);
+      }
+
       await roomModel.deleteRoom(roomId);
 
       return res.status(200).json({
@@ -203,6 +208,7 @@ module.exports = {
   checkRoomAvailability: async (req, res) => {
     try {
       const { checkin, checkout, type, guestTotal } = req.body;
+      console.log(req.body);
 
       const availableRooms = await roomModel.checkRoomAvailability(
         checkin,
@@ -213,7 +219,7 @@ module.exports = {
 
       return res.json({
         status: true,
-        availableRooms,        
+        availableRooms,
         message: "Room availability checked successfully",
       });
     } catch (err) {

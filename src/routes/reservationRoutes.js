@@ -8,6 +8,8 @@ router.get("/", reservationController.getReservations);
 router.get("/:id", reservationController.getReservationById);
 router.post("/", reservationController.createReservation);
 
-router.post("/payment", paymentController.postPayment);
+router.post("/genereateToken", paymentController.genereateToken);
+router.patch("/success", paymentController.paymentSuccess);
+router.patch("/cancel", paymentController.paymentCancel);
 
 module.exports = router;

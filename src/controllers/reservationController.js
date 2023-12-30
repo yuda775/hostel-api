@@ -1,3 +1,4 @@
+const midtransClient = require("midtrans-client");
 const reservationModel = require("../models/reservationModel");
 const roomModel = require("../models/roomModel");
 
@@ -33,25 +34,19 @@ module.exports = {
   },
   createReservation: async (req, res) => {
     try {
-      const {
-        roomId,
-        checkin: userCheckin,
-        checkout: userCheckout,
-        guestTotal,
-      } = req.body;
+      const { roomId, checkin, checkout, guestTotal } = req.body;
 
       const room = await roomModel.getRoomById(roomId);
       if (!room) {
-        return res.status(404).json({
-          status: false,
-          message: "Room not found",
-        });
+        return res
+          .status(404)
+          .json({ status: false, message: "Room not found" });
       }
 
-      const checkin = new Date(userCheckin);
-      const checkout = new Date(userCheckout);
+      const checkinDate = new Date(checkin);
+      const checkoutDate = new Date(checkout);
 
-      if (checkout <= checkin) {
+      if (checkoutDate <= checkinDate) {
         return res.status(400).json({
           status: false,
           message: "Checkout date must be later than checkin date",
@@ -61,11 +56,10 @@ module.exports = {
       const existingReservations =
         await reservationModel.getReservationsByRoomAndDate(
           roomId,
-          userCheckin,
-          userCheckout
+          checkin,
+          checkout
         );
 
-      // Pemeriksaan apakah existingReservations adalah array
       if (!Array.isArray(existingReservations)) {
         return res.status(400).json({
           status: false,
@@ -79,10 +73,9 @@ module.exports = {
           0
         );
         if (room.capacity < totalGuests + guestTotal) {
-          return res.status(400).json({
-            status: false,
-            message: "Room capacity is not enough",
-          });
+          return res
+            .status(400)
+            .json({ status: false, message: "Room capacity is not enough" });
         }
       } else if (room.type === "PRIVATE" && existingReservations.length > 0) {
         return res.status(400).json({
@@ -91,23 +84,29 @@ module.exports = {
         });
       }
 
-      const durationMilliseconds = checkout - checkin;
+      const durationMilliseconds = checkoutDate - checkinDate;
       const durationDays = Math.ceil(
         durationMilliseconds / (1000 * 60 * 60 * 24)
       );
 
-      let amount;
-      if (room.type == "DORM") {
-        amount = room.price * durationDays * guestTotal;
-      } else {
-        amount = room.price * durationDays;
-      }
+      const amount =
+        room.type === "DORM"
+          ? room.price * durationDays * guestTotal
+          : room.price * durationDays;
+
+      const customerDetails = {
+        first_name: "budi",
+        last_name: "pratama",
+        email: "budi.pra@example.com",
+        phone: "08111222333",
+      };
 
       const reservation = await reservationModel.createReservation(roomId, {
-        checkin: userCheckin,
-        checkout: userCheckout,
+        checkin,
+        checkout,
         guestTotal,
         amount,
+        customerDetails,
         status: "pending",
       });
 
@@ -117,11 +116,11 @@ module.exports = {
         room,
         message: "Reservation created successfully",
       });
-    } catch (err) {
-      console.error(err.message);
+    } catch (error) {
+      console.error(error.message);
       return res.status(500).json({
         status: false,
-        message: `Error creating reservation: ${err.message}`,
+        message: `Error creating reservation: ${error.message}`,
       });
     }
   },

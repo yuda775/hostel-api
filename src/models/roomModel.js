@@ -57,6 +57,7 @@ module.exports = {
   },
 
   deleteRoom: async (roomId) => {
+    console.log(`Deleting room: ${roomId}`);
     return await prisma.rooms.delete({
       where: {
         id: parseInt(roomId),
@@ -79,8 +80,19 @@ module.exports = {
         where: {
           type: type,
           capacity: { gte: guestTotal },
+          NOT: {
+            reservation: {
+              some: {
+                AND: [
+                  { checkin: { lt: new Date(checkout) } },
+                  { checkout: { gt: new Date(checkin) } },
+                ],
+              },
+            },
+          },
         },
         select: {
+          id: true,
           roomNumber: true,
           type: true,
           price: true,
@@ -108,37 +120,17 @@ module.exports = {
         },
       });
 
-      const SisaTamu = await prisma.rooms.findMany({
-        where: {
-          type: type,
-          capacity: { gte: guestTotal },
-        },
-        select: {
-          roomNumber: true,
-          type: true,
-          price: true,
-          capacity: true,
-          reservation: {
-            where: {
-              AND: [
-                { checkin: { lte: new Date(checkin) } },
-                { checkout: { gte: new Date(checkout) } },
-              ],
-            },
-            select: {
-              id: true,
-              checkin: true,
-              checkout: true,
-              guestTotal: true,
-            },
-          },
-        },
-      });
-
-      console.log("ini sisa tamu = ", SisaTamu);
-
       return rooms
+        .filter((room) => {
+          // filter private rooms that have no reservation
+          if (room.type === "PRIVATE") {
+            return room.reservation.length === 0;
+          }
+          // keep other types of rooms
+          return true;
+        })
         .map((room) => {
+          // calculate available capacity for dorm rooms
           if (room.type === "DORM") {
             const totalGuests = room.reservation.reduce(
               (total, reservation) => total + reservation.guestTotal,
@@ -147,19 +139,19 @@ module.exports = {
             const availableCapacity = room.capacity - totalGuests;
 
             return {
+              id: room.id,
               roomNumber: room.roomNumber,
               type: room.type,
               price: room.price,
-              capacity: room.capacity,
-              totalGuests,
-              availableCapacity,
+              capacity: availableCapacity,
               reservations: room.reservation,
+              images: room.images,
+              roomFacilityRelation: room.roomFacilityRelation,
             };
-          } else if (room.type === "PRIVATE") {
-            return room.reservation.length === 0 ? room : null;
           }
-        })
-        .filter((room) => room !== null);
+          // return other types of rooms as they are
+          return room;
+        });
     } catch (error) {
       console.log(`Error checking room availability: ${error.message}`);
       throw new Error(`Error checking room availability: ${error.message}`);

@@ -1,6 +1,5 @@
 const midtransClient = require("midtrans-client");
 const reservationModel = require("../models/reservationModel");
-const { json } = require("express");
 
 module.exports = {
   getPayment: async (req, res) => {
@@ -18,7 +17,7 @@ module.exports = {
     }
   },
 
-  postPayment: async (req, res) => {
+  genereateToken: async (req, res) => {
     try {
       const { reservationId } = req.body;
       const reservation = await reservationModel.getReservationById(
@@ -46,37 +45,76 @@ module.exports = {
 
       const creditCardDetails = { secure: true };
 
-      const customerDetails = {
-        first_name: "budi",
-        last_name: "pratama",
-        email: "budi.pra@example.com",
-        phone: "08111222333",
-      };
-
       const parameter = {
         transaction_details: transactionDetails,
         credit_card: creditCardDetails,
-        customer_details: customerDetails,
       };
 
       const transaction = await snap.createTransaction(parameter);
       const transactionToken = transaction.token;
 
-      const updatedReservation = {
-        status: "complete",
+      res.json({
+        status: true,
+        transactionToken,
+        message: "Payment created successfully",
+      });
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+
+  paymentSuccess: async (req, res) => {
+    try {
+      const { reservationId } = req.body;
+
+      const reservation = await reservationModel.getReservationById(
+        reservationId
+      );
+
+      const updateData = {
+        ...reservation,
+        status: "paid",
       };
 
-      const postPaymentResult = await reservationModel.updateReservation(
-        reservation.id,
-        updatedReservation
+      const reservationUpdate = await reservationModel.updateReservation(
+        reservationId,
+        updateData
       );
 
       res.json({
         status: true,
-        customerDetails,
-        transactionToken,
-        postPaymentResult,
-        message: "Payment created successfully",
+        reservationUpdate,
+        message: "Payment success",
+      });
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+
+  paymentCancel: async (req, res) => {
+    try {
+      const { reservationId } = req.body;
+
+      const reservation = await reservationModel.getReservationById(
+        reservationId
+      );
+
+      const updateData = {
+        ...reservation,
+        status: "canceled",
+      };
+
+      const reservationUpdate = await reservationModel.updateReservation(
+        reservationId,
+        updateData
+      );
+
+      res.json({
+        status: true,
+        reservationUpdate,
+        message: "Payment canceled",
       });
     } catch (error) {
       console.error("Error creating payment:", error);

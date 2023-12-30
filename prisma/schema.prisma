@@ -58,6 +58,7 @@ model Reservation {
 }
 
 enum ReservationStatus {
+  paid
   pending
-  complete
+  canceled
 }
