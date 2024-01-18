@@ -32,9 +32,27 @@ module.exports = {
       res.status(500).json({ error: "Internal server error" });
     }
   },
+
+  getReservationByUserId: async (req, res) => {
+    const userId = req.params.id;
+    try {
+      const reservations = await reservationModel.getReservationByUserId(
+        userId
+      );
+      res.json({
+        status: true,
+        reservations,
+        message: "Get reservation successfully",
+      });
+    } catch (error) {
+      console.error("Error fetching reservation:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+
   createReservation: async (req, res) => {
     try {
-      const { roomId, checkin, checkout, guestTotal } = req.body;
+      const { roomId, checkin, checkout, guestTotal, customerName } = req.body;
 
       const room = await roomModel.getRoomById(roomId);
       if (!room) {
@@ -94,26 +112,21 @@ module.exports = {
           ? room.price * durationDays * guestTotal
           : room.price * durationDays;
 
-      const customerDetails = {
-        first_name: "budi",
-        last_name: "pratama",
-        email: "budi.pra@example.com",
-        phone: "08111222333",
-      };
-
+      console.log(req.body.userId);
       const reservation = await reservationModel.createReservation(roomId, {
         checkin,
         checkout,
         guestTotal,
         amount,
-        customerDetails,
         status: "pending",
+        userId: req.body.userId,
       });
 
       return res.json({
         status: true,
         reservation,
         room,
+        customerName,
         message: "Reservation created successfully",
       });
     } catch (error) {
