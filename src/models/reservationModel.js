@@ -7,8 +7,17 @@ module.exports = {
   getReservations: async () => {
     return await prisma.reservation.findMany({
       include: {
+        Users: {
+          select: {
+            fullName: true,
+          },
+        },
         room: {
           select: {
+            roomNumber: true,
+            type: true,
+            price: true,
+            capacity: true,
             images: true,
             roomFacilityRelation: {
               include: {
@@ -28,6 +37,34 @@ module.exports = {
         room: {
           select: {
             images: true,
+            roomNumber: true,
+            type: true,
+            price: true,
+            capacity: true,
+            roomFacilityRelation: {
+              include: {
+                facility: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  },
+
+  getReservationByUserId: async (userId) => {
+    return await prisma.reservation.findMany({
+      where: {
+        userId: userId,
+      },
+      include: {
+        room: {
+          select: {
+            images: true,
+            roomNumber: true,
+            type: true,
+            price: true,
+            capacity: true,
             roomFacilityRelation: {
               include: {
                 facility: true,
@@ -48,6 +85,7 @@ module.exports = {
         status: data.status,
         amount: data.amount,
         guestTotal: data.guestTotal,
+        userId: parseInt(data.userId),
       },
     });
   },

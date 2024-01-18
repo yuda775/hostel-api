@@ -19,7 +19,7 @@ module.exports = {
 
   genereateToken: async (req, res) => {
     try {
-      const { reservationId } = req.body;
+      const { reservationId, orderId } = req.body;
       const reservation = await reservationModel.getReservationById(
         reservationId
       );
@@ -39,7 +39,7 @@ module.exports = {
       });
 
       const transactionDetails = {
-        order_id: reservation.id,
+        order_id: orderId,
         gross_amount: reservation.amount,
       };
 

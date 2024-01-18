@@ -7,6 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Users {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  password     String
+  fullName     String
+  role         UserRole
+  reservations Reservation[]
+}
+
+enum UserRole {
+  customer
+  admin
+}
+
 model RoomFacilitiesRelation {
   roomId     Int
   facilityId Int
@@ -55,6 +69,8 @@ model Reservation {
   amount     Float
   room       Rooms             @relation(fields: [roomId], references: [id])
   roomId     Int
+  Users      Users?            @relation(fields: [userId], references: [id])
+  userId     Int?
 }
 
 enum ReservationStatus {
