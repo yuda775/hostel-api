@@ -208,7 +208,6 @@ module.exports = {
   checkRoomAvailability: async (req, res) => {
     try {
       const { checkin, checkout, type, guestTotal } = req.body;
-      console.log(req.body);
 
       const availableRooms = await roomModel.checkRoomAvailability(
         checkin,

@@ -61,16 +61,17 @@ enum EnumType {
 }
 
 model Reservation {
-  id         String            @id @default(cuid())
-  checkin    DateTime          @default(now())
-  checkout   DateTime
-  guestTotal Int
-  status     ReservationStatus
-  amount     Float
-  room       Rooms             @relation(fields: [roomId], references: [id])
-  roomId     Int
-  Users      Users?            @relation(fields: [userId], references: [id])
-  userId     Int?
+  id           String            @id @default(cuid())
+  customerName String?
+  checkin      DateTime          @default(now())
+  checkout     DateTime
+  guestTotal   Int
+  status       ReservationStatus
+  amount       Float
+  room         Rooms             @relation(fields: [roomId], references: [id])
+  roomId       Int
+  Users        Users?            @relation(fields: [userId], references: [id])
+  userId       Int?
 }
 
 enum ReservationStatus {

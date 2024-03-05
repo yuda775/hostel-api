@@ -55,7 +55,7 @@ module.exports = {
   getReservationByUserId: async (userId) => {
     return await prisma.reservation.findMany({
       where: {
-        userId: userId,
+        userId: parseInt(userId),
       },
       include: {
         room: {
@@ -86,6 +86,7 @@ module.exports = {
         amount: data.amount,
         guestTotal: data.guestTotal,
         userId: parseInt(data.userId),
+        customerName: data.customerName,
       },
     });
   },
@@ -113,23 +114,30 @@ module.exports = {
     const reservations = await prisma.reservation.findMany({
       where: {
         roomId: roomId,
-        OR: [
+        AND: [
           {
-            AND: [
-              { checkin: { lte: new Date(checkout) } },
-              { checkout: { gte: new Date(checkin) } },
+            OR: [
+              {
+                AND: [
+                  { checkin: { lte: new Date(checkout) } },
+                  { checkout: { gte: new Date(checkin) } },
+                ],
+              },
+              {
+                AND: [
+                  { checkin: { lte: new Date(checkin) } },
+                  { checkout: { gte: new Date(checkout) } },
+                ],
+              },
             ],
           },
           {
-            AND: [
-              { checkin: { lte: new Date(checkin) } },
-              { checkout: { gte: new Date(checkout) } },
-            ],
+            OR: [{ status: "pending" }, { status: "canceled" }],
           },
         ],
       },
     });
 
-    return reservations || []; // Selalu kembalikan array, bahkan jika kosong
+    return reservations || [];
   },
 };
